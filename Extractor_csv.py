@@ -43,9 +43,10 @@ def unificar_hojas_de_excel(lista_de_archivos_excel, carpeta_salida):
         print(f"✅ Hoja '{nombre_hoja}' guardada como '{nombre_archivo_csv}' con {len(df_final)} filas.")
 
 # --- Configuración y Ejecución ---
-nombres_archivos = ["Dataset_xlsx/Totalizadores Planta de Cerveza - 2022_2023.xlsx", 
-                    "Dataset_xlsx/Totalizadores Planta de Cerveza 2021_2022.xlsx",
-                    "Dataset_xlsx/Totalizadores Planta de Cerveza 2023_2024.xlsx"]
+#01-07-2020 hasta 26_10-2023
+nombres_archivos = ["Dataset_xlsx/Totalizadores Planta 2020_2022.xlsx", 
+                    "Dataset_xlsx/Dataset_xlsx/Totalizadores Planta - 2021_2023.xlsx",
+                    "Dataset_xlsx/Dataset_xlsx/Totalizadores Planta 2022_2023.xlsx"]
 carpeta_salida = "Dataset_csv_unificado"
 
 unificar_hojas_de_excel(nombres_archivos, carpeta_salida)
