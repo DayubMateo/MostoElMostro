@@ -3,3 +3,6 @@ Dataset_xlsx
 node_modules/
 __pycache__/
 .vscode/
+Dataset_csv_unificado_completo/
+dataset_FE/
+cache.sqlite
