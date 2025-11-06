@@ -5,4 +5,4 @@ __pycache__/
 .vscode/
 Dataset_csv_unificado_completo/
 dataset_FE/
-cache.sqlite
+.cache.sqlite
