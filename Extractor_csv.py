@@ -45,7 +45,7 @@ def unir_todos_los_excels_en_un_csv(lista_de_archivos_excel, carpeta_salida, nom
 
             try:
                 # 5. EL FILTRADO
-                filtro_hora = df_hoja['HORA'].astype(str).str.strip().str.endswith("23:59:00").fillna(False)
+                filtro_hora = df_hoja['HORA'].astype(str).str.strip().str.startswith("23:59").fillna(False)
                 df_filtrado = df_hoja[filtro_hora]
 
                 # 6. Guardar los resultados
