@@ -235,31 +235,26 @@ if __name__ == "__main__":
     print("✅ Shape final de X_train preprocesada:", X_train_preproc.shape)
     print("✅ Shape final de X_test preprocesada:", X_test_preproc.shape)
 
-    # Volver a DF
-    X_train_preproc_df = pd.DataFrame(X_train_preproc)
-    X_test_preproc_df  = pd.DataFrame(X_test_preproc)
-
-    X_train_preproc_df[target] = y_train.values
-    X_test_preproc_df[target]  = y_test.values
-
-    df_final = pd.concat([X_train_preproc_df, X_test_preproc_df], axis=0).reset_index(drop=True)
-
     carpeta_salida = "data/processed"
     os.makedirs(carpeta_salida, exist_ok=True)
 
-    # Guardar CSV
-    ruta_csv = os.path.join(carpeta_salida, "dataset_final.csv")
-    df_final.to_csv(ruta_csv, index=False)
+    # Guardar X_train preprocesado
+    ruta_X_train = os.path.join(carpeta_salida, "X_train_preproc.csv")
+    pd.DataFrame(X_train_preproc, index=X_train.index).to_csv(ruta_X_train, index=False)
 
-    # Calcular checksum
-    verificar_y_guardar_checksum(ruta_csv)
+    # Guardar X_test preprocesado
+    ruta_X_test = os.path.join(carpeta_salida, "X_test_preproc.csv")
+    pd.DataFrame(X_test_preproc, index=X_test.index).to_csv(ruta_X_test, index=False)
 
-    print(f"✅ Dataset definitivo guardado en {ruta_csv}")
+    # Guardar y_train
+    ruta_y_train = os.path.join(carpeta_salida, "y_train.csv")
+    y_train.to_csv(ruta_y_train, index=False)
 
-    # Concatenar train + test
-    df_final = pd.concat([X_train_preproc_df, X_test_preproc_df], axis=0).reset_index(drop=True)
+    # Guardar y_test
+    ruta_y_test = os.path.join(carpeta_salida, "y_test.csv")
+    y_test.to_csv(ruta_y_test, index=False)
 
-
+    print("✅ Todos los datasets guardados en data/processed:")    
 
     # Calcular Checksum
     carpeta_salida = "data/processed"
