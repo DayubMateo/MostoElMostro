@@ -1,0 +1,37 @@
+# Si se realiza un cambio en este archivo,
+# se debe reiniciar el visual para que se
+# implementen los cambios.
+
+COLUMNAS_SELECCIONADAS = [
+    "DIA",
+    "Servicios (Kw)",
+    "KW Gral Planta",
+    "Planta (Kw)",
+    "Agua Planta (Hl)",
+    "Planta de agua (Hl)",
+    "Frio (Kw)",
+    "KW Trafo 10",
+    "Produccion (Hl)",
+    "Totalizador Sistema Kaeser",
+    "Aire Producido (M3)",
+    "Kw Compresores Aire",
+    "Hl de Mosto",
+    "Aire (Kw)",
+    "Elaboracion (Kw)",
+    "Aire Planta (M3)",
+    "Temp Tq Intermedio",
+    "Pta Agua / Eflu (Kw)",
+    "KW Secador Kaeser",
+    "Bodega (Kw)",
+    "KW Trafo 11",
+    "KW Trafo 9",
+    "Efluentes (Kw)",
+    "KW Trafo 5",
+    "Agua Cond REC",
+    "KW Enfluente Efl",
+    "KW Obrador Contratistas",
+    "Hl Producido Bodega",
+    "KW Cond 5. 6 y 9",
+    "KW Planta de Agua",
+    "Tot L3. L4 y Planta de CO2"
+]
