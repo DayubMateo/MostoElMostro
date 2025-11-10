@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -8,6 +9,8 @@ from sklearn.impute import KNNImputer
 from sklearn.linear_model import Lasso
 from sklearn.ensemble import RandomForestRegressor
 from scipy import stats
+from auxiliar_functions import verificar_y_guardar_checksum
+from sklearn.model_selection import train_test_split
 
 # ---------- Transformador personalizado para ratios ----------
 class RatioFeatures(BaseEstimator, TransformerMixin):
@@ -217,8 +220,50 @@ if __name__ == "__main__":
     y = df[target]
     X = df.drop(columns=[target, 'DIA'], errors='ignore')
     
+    X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, shuffle=True
+    )
+
     pipeline = construir_pipeline(target, X)
     
-    # Ajustamos y transformamos
-    X_preproc = pipeline.fit_transform(X, y)
-    print("✅ Shape final de X preprocesada:", X_preproc.shape)
+    # Ajustamos
+    pipeline.fit(X_train, y_train)
+
+    # Transformamos
+    X_train_preproc = pipeline.transform(X_train)
+    X_test_preproc  = pipeline.transform(X_test)
+    print("✅ Shape final de X_train preprocesada:", X_train_preproc.shape)
+    print("✅ Shape final de X_test preprocesada:", X_test_preproc.shape)
+
+    # Volver a DF
+    X_train_preproc_df = pd.DataFrame(X_train_preproc)
+    X_test_preproc_df  = pd.DataFrame(X_test_preproc)
+
+    X_train_preproc_df[target] = y_train.values
+    X_test_preproc_df[target]  = y_test.values
+
+    df_final = pd.concat([X_train_preproc_df, X_test_preproc_df], axis=0).reset_index(drop=True)
+
+    carpeta_salida = "data/processed"
+    os.makedirs(carpeta_salida, exist_ok=True)
+
+    # Guardar CSV
+    ruta_csv = os.path.join(carpeta_salida, "dataset_final.csv")
+    df_final.to_csv(ruta_csv, index=False)
+
+    # Calcular checksum
+    verificar_y_guardar_checksum(ruta_csv)
+
+    print(f"✅ Dataset definitivo guardado en {ruta_csv}")
+
+    # Concatenar train + test
+    df_final = pd.concat([X_train_preproc_df, X_test_preproc_df], axis=0).reset_index(drop=True)
+
+
+
+    # Calcular Checksum
+    carpeta_salida = "data/processed"
+    nombre_csv = "dataset_final.csv"
+    ruta_csv = os.path.join(carpeta_salida, nombre_csv)  # ruta completa al archivo
+    verificar_y_guardar_checksum(ruta_csv)
+
