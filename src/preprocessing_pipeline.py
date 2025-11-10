@@ -9,6 +9,7 @@ from sklearn.impute import KNNImputer
 from sklearn.linear_model import Lasso
 from sklearn.ensemble import RandomForestRegressor
 from scipy import stats
+# Asumiendo que esta función existe en tu entorno
 from auxiliar_functions import verificar_y_guardar_checksum
 from sklearn.model_selection import train_test_split
 
@@ -133,7 +134,6 @@ class TopNRandomForest(BaseEstimator, TransformerMixin):
         return X[:, self.top_indices_] if isinstance(X, np.ndarray) else X[self.top_features_]
 
 
-# ---- Transformer de selección top N por Lasso ----
 # ---- Transformer de selección top N por Lasso (compatible con ndarray) ----
 class TopNLasso(BaseEstimator, TransformerMixin):
     def __init__(self, n=30, alpha=0.01, random_state=42):
@@ -161,18 +161,62 @@ class TopNLasso(BaseEstimator, TransformerMixin):
         return X[:, self.top_indices_] if isinstance(X, np.ndarray) else X.iloc[:, self.top_indices_]
 
 
+# ---------- [NUEVO] Transformador para Seno/Coseno ----------
+class CyclicalEncoder(BaseEstimator, TransformerMixin):
+    """
+    Codifica features numéricas cíclicas (ej. día del año, mes) en sin y cos.
+    Espera un DataFrame en fit y transform.
+    """
+    def __init__(self):
+        self.max_vals_ = None
+        self.feature_names_in_ = None
 
-# ---------- Función de construcción del pipeline ----------
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, PowerTransformer
-from sklearn.impute import KNNImputer
+    def fit(self, X, y=None):
+        print("APRENDIENDO CICLOS (SIN/COS)!!1!")
+        self.feature_names_in_ = X.columns.tolist()
+        # Aprende el valor máximo (el periodo) de cada columna cíclica
+        self.max_vals_ = X.max()
+        return self
 
+    def transform(self, X):
+        X_transformed = pd.DataFrame(index=X.index)
+        for col in self.feature_names_in_:
+            max_val = self.max_vals_[col]
+            if max_val == 0:
+                X_transformed[f'{col}_sin'] = 0
+                X_transformed[f'{col}_cos'] = 1 # cos(0)
+            else:
+                # Calculamos sin y cos basados en el periodo (max_val)
+                X_transformed[f'{col}_sin'] = np.sin(2 * np.pi * X[col] / max_val)
+                X_transformed[f'{col}_cos'] = np.cos(2 * np.pi * X[col] / max_val)
+        return X_transformed
+    
+    def get_feature_names_out(self, input_features=None):
+        if input_features is None:
+            input_features = self.feature_names_in_
+        output_features = []
+        for col in input_features:
+            output_features.append(f'{col}_sin')
+            output_features.append(f'{col}_cos')
+        return output_features
+
+
+# ---------- [MODIFICADO] Función de construcción del pipeline ----------
 def construir_pipeline(target, X):
     # Detectar columnas
     print("DETECTANDO COLUMNAS!!1!")
+    
+    # --- AÑADIDO ---
+    # Definimos explícitamente qué columna es cíclica
+    # Usamos 'DIA_DEL_ANIO' que crearemos en el main
+    cyclical_cols = ['DIA_DEL_ANIO']
+    
     numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
+    
+    # --- MODIFICADO ---
+    # Excluimos la columna cíclica de las numéricas para darle tratamiento especial
+    numeric_cols = [col for col in numeric_cols if col not in cyclical_cols]
     
     # Pipeline para columnas numéricas
     numeric_transformer = Pipeline([
@@ -186,42 +230,66 @@ def construir_pipeline(target, X):
     
     # Pipeline para columnas categóricas
     categorical_transformer = Pipeline([
-        ('onehot', OneHotEncoder(drop='first', sparse_output=False))
+        ('onehot', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'))
+    ])
+    
+    # --- AÑADIDO ---
+    # Pipeline para columnas cíclicas (seno/coseno)
+    cyclical_transformer = Pipeline([
+        ('cyclical', CyclicalEncoder())
+        # No necesita escalado, sin/cos ya están en [-1, 1]
     ])
     
     # Preprocessor combinado
     preprocessor = ColumnTransformer([
         ('num', numeric_transformer, numeric_cols),
-        ('cat', categorical_transformer, categorical_cols)
+        ('cat', categorical_transformer, categorical_cols),
+        ('cyc', cyclical_transformer, cyclical_cols) # <-- AÑADIDO
     ], remainder='passthrough')
     
     # Pipeline completo: primero preprocessing, después selección de features
     full_pipeline = Pipeline([
         ('preprocessor', preprocessor),
-        ('rf_top50', TopNRandomForest(n=50)),
-        ('lasso_top30', TopNLasso(n=30))
+        ('rf_top50', TopNRandomForest(n=80)),
+        ('lasso_top30', TopNLasso(n=60))
     ])
     
     return full_pipeline
 
 
 
-# ---------- Ejemplo de uso ----------
+# ---------- [MODIFICADO] Ejemplo de uso ----------
 if __name__ == "__main__":
     # Cargar datos
     folder = 'data/processed'
     filename = 'dataset_final.csv'
     df = pd.read_csv(f'{folder}/{filename}', sep=',', decimal='.')
-    print(df.shape)
+    print(f"Shape original: {df.shape}")
+
+    # --- AÑADIDO: Procesamiento de 'DIA' ---
+    # Asumimos que 'DIA' es una columna tipo 'YYYY-MM-DD' o similar
+    try:
+        print("Convirtiendo 'DIA' a datetime y extrayendo 'DIA_DEL_ANIO'")
+        df['DIA'] = pd.to_datetime(df['DIA'])
+        # Creamos 'DIA_DEL_ANIO' (ej: 1 a 365). Esta es la que usará el pipeline
+        df['DIA_DEL_ANIO'] = df['DIA'].dt.dayofyear
+    except Exception as e:
+        print(f"Error al convertir 'DIA'. Asegúrate de que sea un formato de fecha. Error: {e}")
+        print("Continuando sin 'DIA_DEL_ANIO'. Es posible que el pipeline falle.")
+
     df["Frio (Kw)_movil_5"] = df["Frio (Kw)"].rolling(window=5, min_periods=1).mean()
     df["finde"] = df["Dia_semana"].isin(["Sabado", "Domingo"]).astype(int)
 
     target = 'Frio (Kw)'
     y = df[target]
+    
+    # --- MODIFICADO ---
+    # Dropeamos el target y la columna 'DIA' original (que ya es datetime)
+    # MANTENEMOS 'DIA_DEL_ANIO' que creamos
     X = df.drop(columns=[target, 'DIA'], errors='ignore')
     
     X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42, shuffle=True
+        X, y, test_size=0.3, random_state=42, shuffle=True
     )
 
     pipeline = construir_pipeline(target, X)
@@ -240,11 +308,12 @@ if __name__ == "__main__":
 
     # Guardar X_train preprocesado
     ruta_X_train = os.path.join(carpeta_salida, "X_train_preproc.csv")
-    pd.DataFrame(X_train_preproc, index=X_train.index).to_csv(ruta_X_train, index=False)
+    # Es importante guardar como array, ya que los nombres de columna se pierden
+    pd.DataFrame(X_train_preproc).to_csv(ruta_X_train, index=False)
 
     # Guardar X_test preprocesado
     ruta_X_test = os.path.join(carpeta_salida, "X_test_preproc.csv")
-    pd.DataFrame(X_test_preproc, index=X_test.index).to_csv(ruta_X_test, index=False)
+    pd.DataFrame(X_test_preproc).to_csv(ruta_X_test, index=False)
 
     # Guardar y_train
     ruta_y_train = os.path.join(carpeta_salida, "y_train.csv")
@@ -256,9 +325,8 @@ if __name__ == "__main__":
 
     print("✅ Todos los datasets guardados en data/processed:")    
 
-    # Calcular Checksum
-    carpeta_salida = "data/processed"
+    # Calcular Checksum (comentado si 'auxiliar_functions' no está)
+    print("Calculando checksum...")
     nombre_csv = "dataset_final.csv"
-    ruta_csv = os.path.join(carpeta_salida, nombre_csv)  # ruta completa al archivo
+    ruta_csv = os.path.join(folder, nombre_csv) # ruta al archivo original
     verificar_y_guardar_checksum(ruta_csv)
-
