@@ -201,6 +201,73 @@ class CyclicalEncoder(BaseEstimator, TransformerMixin):
         return output_features
 
 
+class ConstantFeatureRemover(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.keep_cols_ = None
+    
+    def fit(self, X, y=None):
+        Xdf = pd.DataFrame(X)
+        self.keep_cols_ = Xdf.columns[Xdf.nunique() > 1].tolist()
+        return self
+    
+    def transform(self, X):
+        Xdf = pd.DataFrame(X)
+        return Xdf[self.keep_cols_].values
+
+
+# ==============================
+#  TRANSFORMER: Interpolación temporal segura
+# ==============================
+class TimeSeriesInterpolatorSafe(BaseEstimator, TransformerMixin):
+    """
+    Interpolación temporal segura:
+      - En fit(): corrige solo el train usando forward interpolate.
+      - En transform(): usa la última fila imputada del train como semilla
+        y corrige el test.
+    """
+    def __init__(self):
+        self.last_train_row_ = None
+        self.columns_ = None
+
+    def fit(self, X, y=None):
+        print("INTERPOLACION TEMPORAL SEGURA (FIT)!!1!")
+        
+        X = pd.DataFrame(X).copy()
+        self.columns_ = X.columns
+
+        # 1. Reemplazar ceros por NaN
+        X = X.replace(0, np.nan)
+
+        # 2. Interpolación forward usando solo información pasada
+        X_interp = X.interpolate(method='linear', limit_direction='forward').ffill()
+
+        # 3. Guardar última fila imputada (para el test)
+        self.last_train_row_ = X_interp.iloc[[-1]].copy()
+
+        return self
+
+    def transform(self, X):
+        print("INTERPOLACION TEMPORAL SEGURA (TRANSFORM)!!1!")
+        
+        X = pd.DataFrame(X).copy()
+
+        # 1. Reemplazar ceros por NaN
+        X = X.replace(0, np.nan)
+
+        # 2. Concatenar la semilla del train + test
+        prep = pd.concat([self.last_train_row_, X], ignore_index=True)
+
+        # 3. Interpolación forward
+        prep_interp = prep.interpolate(method='linear', limit_direction='forward').ffill()
+
+        # 4. Quitar la fila semilla
+        prep_interp = prep_interp.iloc[1:].reset_index(drop=True)
+
+        # Mantener formato original
+        prep_interp.columns = self.columns_
+        return prep_interp
+
+
 # ---------- [MODIFICADO] Función de construcción del pipeline ----------
 def construir_pipeline(target, X):
     # Detectar columnas
@@ -220,10 +287,11 @@ def construir_pipeline(target, X):
     
     # Pipeline para columnas numéricas
     numeric_transformer = Pipeline([
-        ('ratio', RatioFeatures()),
-        ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
+    #    ('ratio', RatioFeatures()),
+    #    ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
         ('outliers', OutlierReplacer(umbral=3.0)),
-        ('imputer', KNNImputer(n_neighbors=20)),
+        ('imputer', TimeSeriesInterpolatorSafe()),
+        ('const_drop', ConstantFeatureRemover()),
         ('power', PowerTransformer(method='yeo-johnson')),
         ('scaler', StandardScaler())
     ])
@@ -250,8 +318,8 @@ def construir_pipeline(target, X):
     # Pipeline completo: primero preprocessing, después selección de features
     full_pipeline = Pipeline([
         ('preprocessor', preprocessor),
-        ('rf_top50', TopNRandomForest(n=80)),
-        ('lasso_top30', TopNLasso(n=60))
+#        ('rf_top50', TopNRandomForest(n=60)),
+        ('lasso_top100', TopNLasso(n=100))
     ])
     
     return full_pipeline
@@ -264,6 +332,7 @@ if __name__ == "__main__":
     folder = 'data/processed'
     filename = 'dataset_final.csv'
     df = pd.read_csv(f'{folder}/{filename}', sep=',', decimal='.')
+    df = df.sort_values(by='DIA', ignore_index=True)
     print(f"Shape original: {df.shape}")
 
     # --- AÑADIDO: Procesamiento de 'DIA' ---
@@ -280,7 +349,7 @@ if __name__ == "__main__":
     df["Frio (Kw)_movil_5"] = df["Frio (Kw)"].rolling(window=5, min_periods=1).mean()
     df["finde"] = df["Dia_semana"].isin(["Sabado", "Domingo"]).astype(int)
 
-    target = 'Frio (Kw)'
+    target = 'Frio (Kw) tomorrow'
     y = df[target]
     
     # --- MODIFICADO ---
@@ -288,9 +357,17 @@ if __name__ == "__main__":
     # MANTENEMOS 'DIA_DEL_ANIO' que creamos
     X = df.drop(columns=[target, 'DIA'], errors='ignore')
     
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42, shuffle=True
-    )
+    test_size = 0.3
+    split_index = int(len(df) * (1 - test_size))
+
+    train_df = df.iloc[:split_index]
+    test_df  = df.iloc[split_index:]
+
+    X_train = train_df.drop(columns=['Frio (Kw) tomorrow', 'DIA'], errors='ignore')
+    y_train = train_df['Frio (Kw) tomorrow']
+
+    X_test = test_df.drop(columns=['Frio (Kw) tomorrow', 'DIA'], errors='ignore')
+    y_test = test_df['Frio (Kw) tomorrow']
 
     pipeline = construir_pipeline(target, X)
     

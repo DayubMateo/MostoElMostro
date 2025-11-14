@@ -43,20 +43,21 @@ def unir_todos_los_excels_en_un_csv(lista_de_archivos_excel, carpeta_salida, nom
             continue
 
         for nombre_hoja, df_hoja in todas_las_hojas.items():
-            print(f"  -> Procesando hoja: '{nombre_hoja}'")
+            if nombre_hoja not in ['Auxiliar', 'Seguimiento Dia']:
+                print(f"  -> Procesando hoja: '{nombre_hoja}'")
 
-            if 'HORA' not in df_hoja.columns or 'DIA' not in df_hoja.columns:
-                print(f"     ADVERTENCIA: La hoja '{nombre_hoja}' carece de 'HORA' o 'DIA'. Omitida.")
-                continue
+                if 'HORA' not in df_hoja.columns or 'DIA' not in df_hoja.columns:
+                    print(f"     ADVERTENCIA: La hoja '{nombre_hoja}' carece de 'HORA' o 'DIA'. Omitida.")
+                    continue
 
-            try:
-                filtro_hora = df_hoja['HORA'].astype(str).str.strip().str.startswith("23:59").fillna(False)
-                df_filtrado = df_hoja[filtro_hora]
+                try:
+                    filtro_hora = df_hoja['HORA'].astype(str).str.strip().str.startswith("23:59").fillna(False)
+                    df_filtrado = df_hoja[filtro_hora]
 
-                if not df_filtrado.empty:
-                    dataframes_filtrados.append(df_filtrado)
-            except Exception as e:
-                print(f"     ERROR al filtrar hoja '{nombre_hoja}': {e}")
+                    if not df_filtrado.empty:
+                        dataframes_filtrados.append(df_filtrado)
+                except Exception as e:
+                    print(f"     ERROR al filtrar hoja '{nombre_hoja}': {e}")
 
     if not dataframes_filtrados:
         print("\nADVERTENCIA: No se encontró ningún dato con el filtro especificado.")
@@ -64,6 +65,25 @@ def unir_todos_los_excels_en_un_csv(lista_de_archivos_excel, carpeta_salida, nom
 
     df_final = pd.concat(dataframes_filtrados, ignore_index=True)
     df_agregado = df_final.groupby('DIA', as_index=False).sum(numeric_only=True)
+
+    # 1️⃣ Columnas que contienen "unnamed" en el nombre (cualquier forma)
+    cols_unnamed = df_agregado.columns[
+        df_agregado.columns.str.contains("unnamed", case=False, regex=True)
+    ]
+
+    # 2️⃣ Columnas donde el % de ceros > 95%
+    porcentaje_ceros = (df_agregado == 0).mean() * 100
+    cols_ceros_95 = porcentaje_ceros[porcentaje_ceros > 95].index
+
+    # 3️⃣ Unir ambas
+    cols_a_eliminar = list(set(cols_unnamed).union(cols_ceros_95))
+
+    # 4️⃣ Eliminar columnas
+    df_agregado = df_agregado.drop(columns=cols_a_eliminar)
+
+    print(f"Columnas eliminadas ({len(cols_a_eliminar)}):")
+    print(cols_a_eliminar)
+
 
     ruta_salida_completa = os.path.join(carpeta_salida, nombre_csv_salida)
     os.makedirs(carpeta_salida, exist_ok=True)
@@ -82,7 +102,7 @@ def procesar_dataset(ruta_csv):
     df = pd.read_csv(ruta_csv)
 
     # Filtrar columnas relevantes
-    df = df[COLUMNAS_SELECCIONADAS]
+#    df = df[COLUMNAS_SELECCIONADAS]
 
     # --- Agregar columnas de fecha ---
     df['DIA'] = pd.to_datetime(df['DIA'], errors='coerce')
@@ -152,7 +172,12 @@ def procesar_dataset(ruta_csv):
             return "Otoño"
 
     df['estacion'] = pd.to_datetime(df[['Anio', 'Mes', 'Dia']].rename(columns={'Anio': 'year', 'Mes': 'month', 'Dia': 'day'})).apply(_get_estacion)
-    df["Frio (Kw)"] = df["Frio (Kw)"].shift(-1)
+    print(df.shape)
+    print(df.iloc[-1])
+    df["Frio (Kw) tomorrow"] = df["Frio (Kw)"].shift(-1)
+    df = df.iloc[:-1]
+    print(df.shape)
+    print(df.iloc[-1])
 
     # --- Guardar archivo ---
     df.iloc[:-1].to_csv(ruta_csv, index=False, encoding='utf-8-sig')
