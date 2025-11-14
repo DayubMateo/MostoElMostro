@@ -287,8 +287,8 @@ def construir_pipeline(target, X):
     
     # Pipeline para columnas numéricas
     numeric_transformer = Pipeline([
-    #    ('ratio', RatioFeatures()),
-    #    ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
+        ('ratio', RatioFeatures()),
+        ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
         ('outliers', OutlierReplacer(umbral=3.0)),
         ('imputer', TimeSeriesInterpolatorSafe()),
         ('const_drop', ConstantFeatureRemover()),

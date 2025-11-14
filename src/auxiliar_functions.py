@@ -20,22 +20,52 @@ from modules.tarifa_electrica import calcular_tarifa_electrica_general, cargos_p
 # 1️⃣ UNIFICACIÓN DE EXCELS Y GENERACIÓN DEL CSV
 # ================================================================
 
+
 def unir_todos_los_excels_en_un_csv(lista_de_archivos_excel, carpeta_salida, nombre_csv_salida):
-    """
-    Une hojas de múltiples archivos Excel, filtra por HORA=23:59:00, agrupa por 'DIA'
-    y genera un CSV único.
-    """
     print("Iniciando proceso de filtrado y unificación...")
     dataframes_filtrados = []
 
-    try:
-        os.makedirs(carpeta_salida, exist_ok=True)
-    except Exception as e:
-        print(f"FATAL: No se pudo crear la carpeta de salida. Motivo: {e}")
-        return
+    # ============================================================
+    # 1️⃣ PRE-LECTURA: obtener primera fecha de cada archivo
+    # ============================================================
+    primeras_fechas = []
 
-    for archivo_excel in lista_de_archivos_excel:
+    for archivo in lista_de_archivos_excel:
+        try:
+            hojas = pd.read_excel(archivo, sheet_name=None)
+        except Exception as e:
+            print(f"ERROR leyendo {archivo}: {e}")
+            primeras_fechas.append(pd.Timestamp.max)
+            continue
+
+        fechas_archivo = []
+
+        for nombre, df in hojas.items():
+            if nombre in ['Auxiliar', 'Seguimiento Dia']:
+                continue
+
+            if 'DIA' in df.columns:
+                fechas = pd.to_datetime(df['DIA'], errors='coerce').dropna()
+                if not fechas.empty:
+                    fechas_archivo.append(fechas.min())
+
+        if fechas_archivo:
+            primeras_fechas.append(min(fechas_archivo))
+        else:
+            primeras_fechas.append(pd.Timestamp.max)
+
+    # ============================================================
+    # 2️⃣ LECTURA REAL: filtrar por solapamiento
+    # ============================================================
+
+    for idx, archivo_excel in enumerate(lista_de_archivos_excel):
         print(f"\n--- Procesando archivo: {archivo_excel} ---")
+
+        fecha_limite = (
+            primeras_fechas[idx + 1] if idx < len(lista_de_archivos_excel) - 1 
+            else None
+        )
+
         try:
             todas_las_hojas = pd.read_excel(archivo_excel, sheet_name=None)
         except Exception as e:
@@ -43,54 +73,75 @@ def unir_todos_los_excels_en_un_csv(lista_de_archivos_excel, carpeta_salida, nom
             continue
 
         for nombre_hoja, df_hoja in todas_las_hojas.items():
-            if nombre_hoja not in ['Auxiliar', 'Seguimiento Dia']:
-                print(f"  -> Procesando hoja: '{nombre_hoja}'")
+            if nombre_hoja in ['Auxiliar', 'Seguimiento Dia']:
+                continue
 
-                if 'HORA' not in df_hoja.columns or 'DIA' not in df_hoja.columns:
-                    print(f"     ADVERTENCIA: La hoja '{nombre_hoja}' carece de 'HORA' o 'DIA'. Omitida.")
+            print(f"  -> Procesando hoja: '{nombre_hoja}'")
+
+            if 'HORA' not in df_hoja.columns or 'DIA' not in df_hoja.columns:
+                print(f"     ADVERTENCIA: Falta 'HORA' o 'DIA'. Omitida.")
+                continue
+
+            # Convertir fecha y hora
+            try:
+                df_hoja['DIA'] = pd.to_datetime(df_hoja['DIA'], errors='coerce')
+                df_hoja['HORA'] = df_hoja['HORA'].astype(str).str.strip()
+
+                # Filtrado de la última hora
+                filtro_hora = df_hoja['HORA'].str.startswith("23:59").fillna(False)
+                df_filtrado = df_hoja[filtro_hora]
+
+                if df_filtrado.empty:
                     continue
 
-                try:
-                    filtro_hora = df_hoja['HORA'].astype(str).str.strip().str.startswith("23:59").fillna(False)
-                    df_filtrado = df_hoja[filtro_hora]
+                # Si hay límite, filtrar solapamiento
+                if fecha_limite is not None:
+                    df_filtrado = df_filtrado[df_filtrado['DIA'] < fecha_limite]
 
-                    if not df_filtrado.empty:
-                        dataframes_filtrados.append(df_filtrado)
-                except Exception as e:
-                    print(f"     ERROR al filtrar hoja '{nombre_hoja}': {e}")
+                if not df_filtrado.empty:
+                    dataframes_filtrados.append(df_filtrado)
+
+            except Exception as e:
+                print(f"     ERROR procesando hoja '{nombre_hoja}': {e}")
 
     if not dataframes_filtrados:
-        print("\nADVERTENCIA: No se encontró ningún dato con el filtro especificado.")
+        print("\nADVERTENCIA: No se encontró ningún dato filtrado.")
         return
 
+    # ============================================================
+    # 3️⃣ AGRUPAR POR DÍA
+    # ============================================================
     df_final = pd.concat(dataframes_filtrados, ignore_index=True)
+    print("Pre agregado: ",df_final.shape)
     df_agregado = df_final.groupby('DIA', as_index=False).sum(numeric_only=True)
+    print("Post agregado: ", df_agregado.shape)
+    # ============================================================
+    # 4️⃣ LIMPIEZA: eliminar columnas basura
+    # ============================================================
 
-    # 1️⃣ Columnas que contienen "unnamed" en el nombre (cualquier forma)
+    # Columnas "unnamed"
     cols_unnamed = df_agregado.columns[
         df_agregado.columns.str.contains("unnamed", case=False, regex=True)
     ]
 
-    # 2️⃣ Columnas donde el % de ceros > 95%
+    # Columnas con >95% ceros
     porcentaje_ceros = (df_agregado == 0).mean() * 100
     cols_ceros_95 = porcentaje_ceros[porcentaje_ceros > 95].index
 
-    # 3️⃣ Unir ambas
     cols_a_eliminar = list(set(cols_unnamed).union(cols_ceros_95))
-
-    # 4️⃣ Eliminar columnas
     df_agregado = df_agregado.drop(columns=cols_a_eliminar)
 
     print(f"Columnas eliminadas ({len(cols_a_eliminar)}):")
     print(cols_a_eliminar)
 
-
-    ruta_salida_completa = os.path.join(carpeta_salida, nombre_csv_salida)
+    # ============================================================
+    # 5️⃣ EXPORTAR CSV
+    # ============================================================
     os.makedirs(carpeta_salida, exist_ok=True)
-    df_agregado.to_csv(ruta_salida_completa, index=False, encoding='utf-8-sig')
+    ruta_salida = os.path.join(carpeta_salida, nombre_csv_salida)
+    df_agregado.to_csv(ruta_salida, index=False, encoding='utf-8-sig')
 
-    print(f"\n✅ CSV generado correctamente: {ruta_salida_completa}")
-
+    print(f"\n✅ CSV generado correctamente: {ruta_salida}")
 
 # ================================================================
 # 2️⃣ PROCESAMIENTO INICIAL DEL DATASET
@@ -180,7 +231,7 @@ def procesar_dataset(ruta_csv):
     print(df.iloc[-1])
 
     # --- Guardar archivo ---
-    df.iloc[:-1].to_csv(ruta_csv, index=False, encoding='utf-8-sig')
+    df.to_csv(ruta_csv, index=False, encoding='utf-8-sig')
     print(f"✅ Dataset procesado y guardado en {ruta_csv}")
 
     return df
@@ -231,9 +282,9 @@ def verificar_y_guardar_checksum(ruta_dataset, ruta_checksum="../data/checksums.
 
 def ejecutar_pipeline_completo():
     archivos = [
-        "../data/Totalizadores Planta 2022_2023.xlsx",
-        "../data/Totalizadores Planta - 2021_2023.xlsx",
-        "../data/Totalizadores Planta 2020_2022.xlsx"
+        "../data/Totalizadores Planta 2020_2022.xlsx",
+        "../data/Totalizadores Planta - 2021_2023.xlsx",        
+        "../data/Totalizadores Planta 2022_2023.xlsx"
     ]
     carpeta_salida = "../data/processed"
     nombre_csv = "dataset_final.csv"
