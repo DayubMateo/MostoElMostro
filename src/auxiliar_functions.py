@@ -10,6 +10,7 @@ import json
 import openmeteo_requests
 import requests_cache
 import sys
+from datetime import datetime
 from retry_requests import retry
 from datetime import datetime
 import re
