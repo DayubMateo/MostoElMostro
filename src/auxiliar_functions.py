@@ -263,22 +263,18 @@ def aplicar_lags(df: pd.DataFrame, columnas: list, n_lags: int = 1):
 
     return df_out
 
-
-import re
-import pandas as pd
-
-def agregar_ratio_producido_meta(df):
+def agregar_diferencia_producido_meta(df):
     """
-    Crea columnas ratio entre producido y meta SOLO si la columna producida
+    Crea columnas diferencia entre producido y meta SOLO si la columna producida
     contiene '/ Hl' en su nombre (evita totalizadores).
 
     - Detecta columnas que comienzan con 'Meta'.
     - Extrae la variable base (quitando unidades).
     - Busca una columna producida que contenga la base y además '/ Hl'.
-    - Si cumple, crea ratio = producido/meta.
+    - Si cumple, crea diferencia = producido/meta.
 
     Retorna:
-        df modificado con nuevas columnas de ratio.
+        df modificado con nuevas columnas de diferencia.
     """
 
     columnas = df.columns.tolist()
@@ -301,7 +297,7 @@ def agregar_ratio_producido_meta(df):
                 c for c in columnas
                 if base in c.lower()
                 and not c.startswith("Meta")
-                and "/ hl" in c.lower()     # ⭐ filtro clave
+                and "/ hl" in c.lower()     
             ]
 
             if not posibles:
@@ -313,13 +309,13 @@ def agregar_ratio_producido_meta(df):
 
             col_prod = posibles[0]
 
-            # Crear nombre ratio
-            nombre_ratio = f"ratio_{col_prod}"
+            # Crear nombre diferencia
+            nombre_diferencia = f"diferencia_{col_prod}"
 
             # Evitar división por cero
-            df[nombre_ratio] = df[col_prod] / df[col_meta].replace({0: pd.NA})
+            df[nombre_diferencia] = df[col_prod] - df[col_meta].replace({0: pd.NA})
 
-            print(f"✅ Ratio generado: {nombre_ratio} = {col_prod} / {col_meta}")
+            print(f"✅ diferencia generado: {nombre_diferencia} = {col_prod} - {col_meta}")
 
     return df
 
@@ -341,7 +337,7 @@ def preprocess_general(df):
     df = agregar_temperatura(df)
     df = agregar_tarifa(df)
     df = agregar_estacion(df)
-    df = agregar_ratio_producido_meta(df)
+    df = agregar_diferencia_producido_meta(df)
     columnas_lag = [col for col in df.columns if col.strip().lower().endswith("(kw)".lower())] #todas las que terminan en kw
     df = aplicar_lags(df, columnas_lag, n_lags=3)
     # promedio temporal
@@ -385,7 +381,7 @@ def ejecutar_pipeline_completo():
     print("\n🚀 Pipeline completo ejecutado con éxito.")
 
 
-def verificar_y_guardar_checksum(ruta_dataset, ruta_checksum="../data/checksums.json"):
+def verificar_y_guardar_checksum(ruta_dataset, ruta_checksum="data/checksums.json"):
     os.makedirs(os.path.dirname(ruta_checksum), exist_ok=True)
 
     def calcular_md5(ruta, buffer_size=65536):

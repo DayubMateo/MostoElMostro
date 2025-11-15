@@ -303,8 +303,8 @@ def construir_pipeline(target, X):
     numeric_transformer = Pipeline([
         ('outliers', OutlierReplacer(umbral=3.0)),
         ('imputer', TimeSeriesInterpolatorSafe()),
-        ('ratio', RatioFeatures()),
-        ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
+#        ('ratio', RatioFeatures()),
+#        ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
         ('const_drop', ConstantFeatureRemover()),
         ('power', PowerTransformer(method='yeo-johnson')),
         ('scaler', StandardScaler())
@@ -332,8 +332,7 @@ def construir_pipeline(target, X):
     # Pipeline completo: primero preprocessing, después selección de features
     full_pipeline = Pipeline([
         ('preprocessor', preprocessor),
-#        ('rf_top50', TopNRandomForest(n=60)),
-        ('lasso_top100', TopNLasso(n=100))
+        ('lasso_top100', TopNLasso(n=40))
     ])
     
     return full_pipeline

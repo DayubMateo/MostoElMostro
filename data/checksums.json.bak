@@ -1,0 +1,36 @@
+{
+    "dataset_final.csv": [
+        {
+            "timestamp": null,
+            "checksum": "e"
+        },
+        {
+            "timestamp": "2025-11-15 19:42:19",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        },
+        {
+            "timestamp": "2025-11-15 19:48:11",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        },
+        {
+            "timestamp": "2025-11-15 19:50:45",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        },
+        {
+            "timestamp": "2025-11-15 19:52:48",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        },
+        {
+            "timestamp": "2025-11-15 19:53:54",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        },
+        {
+            "timestamp": "2025-11-15 19:57:22",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        },
+        {
+            "timestamp": "2025-11-15 20:01:49",
+            "checksum": "a8fde188dfa816657cd07a64efb83eb0"
+        }
+    ]
+}
