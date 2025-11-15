@@ -221,51 +221,65 @@ class ConstantFeatureRemover(BaseEstimator, TransformerMixin):
 class TimeSeriesInterpolatorSafe(BaseEstimator, TransformerMixin):
     """
     Interpolación temporal segura:
-      - En fit(): corrige solo el train usando forward interpolate.
-      - En transform(): usa la última fila imputada del train como semilla
-        y corrige el test.
+      - En fit(): imputación SOLO usando datos del train (sin leakage).
+      - Usa: replace(0->nan), interpolación linear + ffill + bfill.
+      - En transform(): el test se interpola usando únicamente la última
+        fila imputada del train como semilla (forward-fill).
     """
+
     def __init__(self):
         self.last_train_row_ = None
         self.columns_ = None
 
     def fit(self, X, y=None):
-        print("INTERPOLACION TEMPORAL SEGURA (FIT)!!1!")
-        
+        print("🚀 Interpolación temporal segura: FIT")
+
+        # Asegurar DataFrame y copiar
         X = pd.DataFrame(X).copy()
         self.columns_ = X.columns
 
-        # 1. Reemplazar ceros por NaN
+        # ---- 1) Reemplazar 0 → NaN ----
         X = X.replace(0, np.nan)
 
-        # 2. Interpolación forward usando solo información pasada
-        X_interp = X.interpolate(method='linear', limit_direction='forward').ffill()
+        # ---- 2) Interpolación SOLO en Train ----
+        X_interp = (
+            X
+            .interpolate(method='linear', limit_direction='both')
+            .ffill()
+            .bfill()
+        )
 
-        # 3. Guardar última fila imputada (para el test)
+        # ---- 3) Guardar última fila imputada ----
         self.last_train_row_ = X_interp.iloc[[-1]].copy()
 
         return self
 
     def transform(self, X):
-        print("INTERPOLACION TEMPORAL SEGURA (TRANSFORM)!!1!")
-        
+        print("🔧 Interpolación temporal segura: TRANSFORM")
+
         X = pd.DataFrame(X).copy()
 
-        # 1. Reemplazar ceros por NaN
+        # ---- 1) Reemplazar 0 → NaN ----
         X = X.replace(0, np.nan)
 
-        # 2. Concatenar la semilla del train + test
+        # ---- 2) Concatenar semilla + X_test ----
         prep = pd.concat([self.last_train_row_, X], ignore_index=True)
 
-        # 3. Interpolación forward
-        prep_interp = prep.interpolate(method='linear', limit_direction='forward').ffill()
+        # ---- 3) Interpolación forward ONLY (no leakage) ----
+        prep_interp = (
+            prep
+            .interpolate(method='linear', limit_direction='forward')
+            .ffill()
+        )
 
-        # 4. Quitar la fila semilla
+        # ---- 4) Quitar semilla ----
         prep_interp = prep_interp.iloc[1:].reset_index(drop=True)
 
-        # Mantener formato original
+        # ---- 5) Restaurar columnas originales ----
         prep_interp.columns = self.columns_
+
         return prep_interp
+
 
 
 # ---------- [MODIFICADO] Función de construcción del pipeline ----------
@@ -287,10 +301,10 @@ def construir_pipeline(target, X):
     
     # Pipeline para columnas numéricas
     numeric_transformer = Pipeline([
-        ('ratio', RatioFeatures()),
-        ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
         ('outliers', OutlierReplacer(umbral=3.0)),
         ('imputer', TimeSeriesInterpolatorSafe()),
+        ('ratio', RatioFeatures()),
+        ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
         ('const_drop', ConstantFeatureRemover()),
         ('power', PowerTransformer(method='yeo-johnson')),
         ('scaler', StandardScaler())
@@ -312,7 +326,7 @@ def construir_pipeline(target, X):
     preprocessor = ColumnTransformer([
         ('num', numeric_transformer, numeric_cols),
         ('cat', categorical_transformer, categorical_cols),
-        ('cyc', cyclical_transformer, cyclical_cols) # <-- AÑADIDO
+        ('cyc', cyclical_transformer, cyclical_cols) 
     ], remainder='passthrough')
     
     # Pipeline completo: primero preprocessing, después selección de features
