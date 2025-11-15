@@ -297,7 +297,7 @@ def construir_pipeline(target, X):
     
     # --- MODIFICADO ---
     # Excluimos la columna cíclica de las numéricas para darle tratamiento especial
-    numeric_cols = [col for col in numeric_cols if col not in cyclical_cols]
+    numeric_cols = [col for col in numeric_cols if col not in cyclical_cols and col != "es_finde"]
     
     # Pipeline para columnas numéricas
     numeric_transformer = Pipeline([
