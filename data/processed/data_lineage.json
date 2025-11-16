@@ -1,0 +1,75 @@
+{
+    "input_file": "data/processed\\dataset_final.csv",
+    "output_files": {
+        "X_train": "data/processed\\X_train_preproc.csv",
+        "X_test": "data/processed\\X_test_preproc.csv",
+        "y_train": "data/processed\\y_train.csv",
+        "y_test": "data/processed\\y_test.csv"
+    },
+    "script_used": "preprocessing_pipeline.py",
+    "execution_timestamp": "2025-11-16T18:02:44.749574",
+    "final_data_shape": {
+        "X_train": {
+            "rows": 828,
+            "columns": 40
+        },
+        "X_test": {
+            "rows": 356,
+            "columns": 40
+        },
+        "y_train": {
+            "rows": 828
+        },
+        "y_test": {
+            "rows": 356
+        }
+    },
+    "pipeline_summary": "Full preprocessing and feature selection pipeline.",
+    "pipeline_steps": [
+        "preprocessor",
+        "lasso_top40"
+    ],
+    "final_features": [
+        "num__Meta ET Elab",
+        "num__Frio (Kw)",
+        "num__EE Sala Maq / Hl",
+        "num__Meta ET Planta",
+        "num__Agua Planta (Hl)",
+        "num__Servicios (Kw)",
+        "num__ratio_EE Servicios / Hl",
+        "num__KW Enfluente Efl",
+        "num__Meta ET Bodega",
+        "cyc__DIA_DEL_ANIO_sin",
+        "num__Efluentes (Kw)",
+        "num__EE Servicios / Hl",
+        "num__Servicios (Kw)_lag2",
+        "num__Planta (Kw)_lag2",
+        "num__Aire Envasado (M3)",
+        "num__EE Caldera / Hl",
+        "num__ratio_Aire Cocina / Hl",
+        "num__ratio_EE Frio / Hl",
+        "num__Planta (Kw)_lag3",
+        "num__VAPOR DE CALDERA 4 KG",
+        "num__Agua Cocina (Hl)",
+        "num__Aire Cocina / Hl",
+        "num__ratio_Aire Bodega / Hl",
+        "num__Planta (Kw)_lag1",
+        "num__Sala Maq (Kw)",
+        "num__Agua Cald",
+        "num__Pta Agua / Eflu (Kw)",
+        "num__Servicios (Kw)_lag3",
+        "num__Agua Envasado (Hl)",
+        "num__Calderas (Kw)",
+        "num__Hl de Mosto",
+        "num__ratio_Agua Elab / Hl",
+        "num__Meta Agua Planta",
+        "num__Agua Cond Evaporativos",
+        "num__Meta ET Linea 2",
+        "num__Envasado (Kw)",
+        "num__KW Cond 7. 8 y 11",
+        "num__ET Servicios / Hl",
+        "num__Agua Servicios (Hl)",
+        "num__Meta ET Linea 3"
+    ],
+    "description": "Dataset procesado con OutlierReplacer, TimeSeriesInterpolatorSafe, ConstantFeatureRemover, PowerTransformer, StandardScaler, CyclicalEncoder, y TopNLasso(n=40)."
+}
