@@ -1,0 +1,19 @@
+[
+    {
+        "timestamp": "2025-11-15 22:54:33",
+        "version": "v1.0.0",
+        "model_name": "RandomForest",
+        "hyperparameters": {
+            "n_estimators": 750,
+            "max_depth": 39,
+            "min_samples_split": 19,
+            "min_samples_leaf": 4,
+            "max_features": 0.7682538772226404,
+            "random_state": 42,
+            "n_jobs": -1
+        },
+        "mae_test": 2745.3884188243087,
+        "model_path": "models/modelo_v1.0.0.pkl",
+        "git_commit": "27360e2744fba6d0288d97fc82c5ea8dab07ff53"
+    }
+]

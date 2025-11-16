@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import os
+import sys, os
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -12,6 +12,7 @@ from scipy import stats
 # Asumiendo que esta función existe en tu entorno
 from auxiliar_functions import verificar_y_guardar_checksum
 from sklearn.model_selection import train_test_split
+from src.auxiliar_functions import importar_datos_completo
 
 # ---------- Transformador personalizado para ratios ----------
 class RatioFeatures(BaseEstimator, TransformerMixin):
@@ -332,15 +333,18 @@ def construir_pipeline(target, X):
     # Pipeline completo: primero preprocessing, después selección de features
     full_pipeline = Pipeline([
         ('preprocessor', preprocessor),
-        ('lasso_top100', TopNLasso(n=40))
+        ('lasso_top40', TopNLasso(n=40))
     ])
     
     return full_pipeline
 
 
 
-# ---------- [MODIFICADO] Ejemplo de uso ----------
+# ---------- PREPROCESAMIENTO ----------
 if __name__ == "__main__":
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+    importar_datos_completo()
+
     # Cargar datos
     folder = 'data/processed'
     filename = 'dataset_final.csv'

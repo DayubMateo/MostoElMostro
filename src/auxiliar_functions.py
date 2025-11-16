@@ -364,14 +364,14 @@ def procesar_dataset(ruta_csv):
 # 4️⃣ PIPELINE COMPLETO
 # ================================================================
 
-def ejecutar_pipeline_completo():
+def importar_datos_completo():
     archivos = [
-        "../data/Totalizadores Planta 2020_2022.xlsx",
-        "../data/Totalizadores Planta - 2021_2023.xlsx",        
-        "../data/Totalizadores Planta 2022_2023.xlsx"
+        "data/Totalizadores Planta 2020_2022.xlsx",
+        "data/Totalizadores Planta - 2021_2023.xlsx",        
+        "data/Totalizadores Planta 2022_2023.xlsx"
     ]
 
-    carpeta_salida = "../data/processed"
+    carpeta_salida = "data/processed"
     nombre_csv = "dataset_final.csv"
     ruta_csv = os.path.join(carpeta_salida, nombre_csv)
 
