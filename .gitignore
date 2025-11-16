@@ -1,0 +1,8 @@
+Dataset_xlsx
+.venv/
+node_modules/
+__pycache__/
+.vscode/
+Dataset_csv/Dataset.csv
+dataset_FE/
+.cache.sqlite
