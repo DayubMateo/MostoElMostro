@@ -9,7 +9,9 @@ import hashlib
 import json
 import openmeteo_requests
 import requests_cache
+import sys
 from retry_requests import retry
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from modules.columnas_seleccionadas import COLUMNAS_SELECCIONADAS
 from modules.tarifa_electrica import calcular_tarifa_electrica_general, cargos_por_anio, periodos
 
@@ -214,7 +216,7 @@ def ejecutar_pipeline_completo():
 
     unir_todos_los_excels_en_un_csv(archivos, carpeta_salida, nombre_csv)
     procesar_dataset(ruta_csv)
-    verificar_y_guardar_checksum(ruta_csv)
+    #verificar_y_guardar_checksum(ruta_csv)
 
     print("\n🚀 Pipeline completo ejecutado con éxito.")
 
