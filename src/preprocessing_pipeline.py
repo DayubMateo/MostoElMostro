@@ -3,11 +3,11 @@ import numpy as np
 import sys, os
 import json
 import datetime
+import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import FunctionTransformer, StandardScaler, PolynomialFeatures, OneHotEncoder, PowerTransformer
-from sklearn.impute import KNNImputer
 from sklearn.linear_model import Lasso
 from sklearn.ensemble import RandomForestRegressor
 from scipy import stats
@@ -118,31 +118,37 @@ class TopNLasso(BaseEstimator, TransformerMixin):
         self.n = n
         self.alpha = alpha
         self.random_state = random_state
-        self.top_features_ = None 
-        self.top_indices_ = None
-        self.feature_names_in_ = None
-    
+
     def fit(self, X, y):
         print("FEATURE IMPORTANCES CON LASSO!!1!")
-        if isinstance(X, pd.DataFrame):
-            self.feature_names_in_ = X.columns.tolist()
-        else:
-            self.feature_names_in_ = [f"f{i}" for i in range(X.shape[1])]
+        
+        # Convertir a DataFrame sí o sí
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
 
+        self.feature_names_in_ = X.columns.tolist()
+
+        # Escalado
         self.scaler_ = StandardScaler()
         X_scaled = self.scaler_.fit_transform(X)
+
+        # LASSO
         self.lasso_ = Lasso(alpha=self.alpha, random_state=self.random_state)
         self.lasso_.fit(X_scaled, y)
+
+        # top N
         coefs = np.abs(self.lasso_.coef_)
-        self.top_indices_ = np.argsort(coefs)[-self.n:][::-1] 
+        self.top_indices_ = np.argsort(coefs)[-self.n:][::-1]
         self.top_features_ = [self.feature_names_in_[i] for i in self.top_indices_]
+
         return self
-    
+
     def transform(self, X):
-        if isinstance(X, pd.DataFrame):
-            return X[self.top_features_]
-        # Si no es DF, usar índices
-        return X[:, self.top_indices_]
+        # Convertir sí o sí a DataFrame y mantener nombres
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X, columns=self.feature_names_in_)
+
+        return X[self.top_features_]
     
     def set_output(self, *, transform=None):
         return self
@@ -242,7 +248,7 @@ class TimeSeriesInterpolatorSafe(BaseEstimator, TransformerMixin):
 
 
 # --- FUNCIÓN DE PIPELINE CORREGIDA ---
-def construir_pipeline(target, X):
+def construir_pipeline(target, X, only_preprocess = False):
     print("DETECTANDO COLUMNAS!!1!")
     
     cyclical_cols = ['DIA_DEL_ANIO']
@@ -289,10 +295,16 @@ def construir_pipeline(target, X):
     
     preprocessor.set_output(transform="pandas")
     
-    full_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
-        ('lasso_top40', lasso_selector) 
-    ])
+    if only_preprocess:
+        full_pipeline = Pipeline([
+            ('preprocessor', preprocessor),
+    #        ('lasso_top40', lasso_selector) 
+        ])
+    else:
+        full_pipeline = Pipeline([
+            ('preprocessor', preprocessor),
+            ('lasso_top40', lasso_selector) 
+        ])
     
     return full_pipeline
 
@@ -312,16 +324,12 @@ if __name__ == "__main__":
     print(f"Shape original: {df.shape}")
 
     try:
-        print("Convirtiendo 'DIA' a datetime y extrAYENDO 'DIA_DEL_ANIO'")
+        print("Convirtiendo 'DIA' a datetime y extrayendo 'DIA_DEL_ANIO'")
         df['DIA'] = pd.to_datetime(df['DIA'])
         df['DIA_DEL_ANIO'] = df['DIA'].dt.dayofyear
     except Exception as e:
         print(f"Error al convertir 'DIA'. Asegúrate de que sea un formato de fecha. Error: {e}")
         print("Continuando sin 'DIA_DEL_ANIO'. Es posible que el pipeline falle.")
-
-    # --- 🟢 LÍNEA CORREGIDA 🟢 ---
-    df["Frio (Kw)_movil_5"] = df["Frio (Kw)"].rolling(window=5, min_periods=1).mean()
-    df["finde"] = df["Dia_semana"].isin(["Sabado", "Domingo"]).astype(int)
 
     target = 'Frio (Kw) tomorrow'
     y = df[target]
@@ -371,6 +379,14 @@ if __name__ == "__main__":
 
     print("✅ Todos los datasets guardados en data/processed:")     
 
+    print("Almacenando pipeline...")
+
+    # GUARDAR EL PIPELINE ENTRENADO
+    print("Guardando pipeline entrenado...")
+    ruta_pipeline = os.path.join('models', "pipeline_entrenado.joblib")
+    joblib.dump(pipeline, ruta_pipeline)
+    print(f"✅ Pipeline entrenado guardado en {ruta_pipeline}")
+
     print("Calculando checksum...")
     nombre_csv = "dataset_final.csv"
     ruta_csv = os.path.join(folder, nombre_csv) 
@@ -394,7 +410,8 @@ if __name__ == "__main__":
                 "X_train": ruta_X_train,
                 "X_test": ruta_X_test,
                 "y_train": ruta_y_train,
-                "y_test": ruta_y_test
+                "y_test": ruta_y_test,
+                "pipeline": ruta_pipeline,
             },
             "script_used": os.path.basename(__file__), 
             "execution_timestamp": datetime.datetime.now().isoformat(),

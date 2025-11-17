@@ -133,7 +133,8 @@ def unir_todos_los_excels_en_un_csv(lista_de_archivos_excel, carpeta_salida, nom
     df_agregado = df_final.groupby('DIA', as_index=False).mean(numeric_only=True)
     print("Post agregado:", df_agregado.shape)
 
-    df_agregado = limpiar_columnas(df_agregado)
+#    df_agregado = limpiar_columnas(df_agregado)
+    df_agregado = df_agregado[COLUMNAS_SELECCIONADAS]
 
     os.makedirs(carpeta_salida, exist_ok=True)
     ruta_salida = os.path.join(carpeta_salida, nombre_csv_salida)
@@ -367,15 +368,16 @@ def procesar_dataset(ruta_csv):
 # 4️⃣ PIPELINE COMPLETO
 # ================================================================
 
-def importar_datos_completo():
+def importar_datos_completo(
     archivos = [
         "data/Totalizadores Planta 2020_2022.xlsx",
         "data/Totalizadores Planta - 2021_2023.xlsx",        
         "data/Totalizadores Planta 2022_2023.xlsx"
-    ]
+    ],
+    nombre_csv = "dataset_final.csv"
+    ):
 
     carpeta_salida = "data/processed"
-    nombre_csv = "dataset_final.csv"
     ruta_csv = os.path.join(carpeta_salida, nombre_csv)
 
     unir_todos_los_excels_en_un_csv(archivos, carpeta_salida, nombre_csv)
