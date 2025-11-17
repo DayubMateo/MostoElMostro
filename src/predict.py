@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
     # Modificar lo que viene delante de processed/ para que se adecue al csv generado en data/processed/dataset_año-año.csv.
     # Ejecutar si se desea visualizar la calidad de las predicciones.
-    #evaluate_with_training_data(results, "data/processed/dataset_2022-2023.csv")
+    evaluate_with_training_data(results, "data/processed/dataset_2022-2023.csv")
     # ------------
     results.to_csv('results/predicciones.csv', index=False)
     print("Predicciones generadas en results/predicciones.csv")

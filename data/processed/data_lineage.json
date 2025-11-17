@@ -8,7 +8,7 @@
         "pipeline": "models\\pipeline_entrenado.joblib"
     },
     "script_used": "preprocessing_pipeline.py",
-    "execution_timestamp": "2025-11-17T00:54:45.321732",
+    "execution_timestamp": "2025-11-17T09:58:24.180384",
     "final_data_shape": {
         "X_train": {
             "rows": 826,
