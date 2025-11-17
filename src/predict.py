@@ -6,7 +6,7 @@ import json
 import os
 from preprocessing_pipeline import construir_pipeline
 from src.auxiliar_functions import importar_datos_completo
-from preprocessing_pipeline import OutlierReplacer, ConstantFeatureRemover, TimeSeriesInterpolatorSafe, CyclicalEncoder, TopNLasso
+from preprocessing_pipeline import PolynomialTopFeatures, RatioFeatures, OutlierReplacer, ConstantFeatureRemover, TimeSeriesInterpolatorSafe, CyclicalEncoder, TopNLasso
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures, OneHotEncoder, PowerTransformer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from datetime import datetime
@@ -133,15 +133,15 @@ def predict_consumption(filepath):
     'prediccion_frio_kw': predictions
     })
 
-def evaluate_with_training_data(predictions_df, filepath):
+def evaluate_with_training_data(predictions_df, filepath = "data/processed/dataset_2022-2023.csv"):
     """
-    Evalúa las predicciones comparando con dataset_2021-2023.csv para las mismas fechas
+    Evalúa las predicciones comparando con filepath para las mismas fechas
     """
     print("\n🔍 Buscando datos reales para evaluación...")
     
     # Cargar dataset con los valores reales
     try:
-        df_real = pd.read_csv("data/processed/dataset_2021-2023.csv")
+        df_real = pd.read_csv(filepath)
         df_real['DIA'] = pd.to_datetime(df_real['DIA'])
         
         # Crear DataFrame con valores reales
@@ -152,7 +152,7 @@ def evaluate_with_training_data(predictions_df, filepath):
         
     except Exception as e:
         print(f"⚠️  Error cargando dataset con valores reales: {e}")
-        print("   Asegúrate de que existe data/processed/dataset_2021-2023.csv")
+        print(f"   Asegúrate de que existe {filepath}")
         return None, None
     
     # Preparar predictions_df para matching
@@ -220,7 +220,11 @@ if __name__ == "__main__":
     filepath = sys.argv[1]
 
     results = predict_consumption(filepath)
-    evaluate_with_training_data(results, '')
+
+    # Modificar lo que viene delante de processed/ para que se adecue al csv generado en data/processed/dataset_año-año.csv.
+    # Ejecutar si se desea visualizar la calidad de las predicciones.
+    #evaluate_with_training_data(results, "data/processed/dataset_2022-2023.csv")
+    # ------------
     results.to_csv('results/predicciones.csv', index=False)
     print("Predicciones generadas en results/predicciones.csv")
 
