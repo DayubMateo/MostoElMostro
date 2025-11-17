@@ -2,6 +2,10 @@
 # se debe reiniciar el visual para que se
 # implementen los cambios.
 
+# Si se realiza un cambio en este archivo,
+# se debe reiniciar el visual para que se
+# implementen los cambios.
+
 COLUMNAS_SELECCIONADAS = [
     'DIA', 'EE Planta / Hl', 'EE Elaboracion / Hl', 'EE Bodega / Hl', 'EE Cocina / Hl',
     'EE Envasado / Hl', 'EE Linea 2 / Hl', 'EE Linea 3 / Hl', 'EE Linea 4 / Hl', 
@@ -38,11 +42,7 @@ COLUMNAS_SELECCIONADAS = [
     'KW Caldera 4', 'KW Filtr Carbon', 'KW Atlas 3', 'KW Toma Agua', 
     'KW Enfr Agua Cocina', 'KW Enfluentes Coc', 'KW Enfluente Efl', 
     'KW Enfluentes Hidr', 'KW Obrador Contratistas', 'Kw Compresores Aire', 
-    'Kw Linea Barriles', 'Agua Planta (Hl)', 'Agua Elaboracion (Hl)', 
-    'Agua Bodega (Hl)', 'Agua Cocina (Hl)', 'Agua Dilucion (Hl)', 
-    'Agua Envasado (Hl)', 'Agua Servicios (Hl)', 'Planta de agua (Hl)', 
-    'Produccion (Hl)', 'Red L1 y L2', 'FC L1 y L2', 'FC Lavadora L2', 'Red L3', 
-    'FC Lavadora L3', 'Red Paste L4', 'FC Barriles', 'Red Paste L1', 'FC Linea 3', 
+    'Kw Linea Barriles', 'Red Paste L1', 'FC Linea 3', 
     'Rinser', 'Red Bodega', 'FC CIP Bodega', 'FC Centec I', 'FC Cocina', 
     'FC Centec II', 'Agua Cond REC', 'Agua Red Servicios', 'Agua Cald', 
     'Agua Cist Industrial', 'Rep Agua Puerto', 'Agua Helada Cocina', 
@@ -81,8 +81,8 @@ COLUMNAS_SELECCIONADAS = [
     'Meta Aire Elaboracion', 'Meta Aire Cocina', 'Meta Aire Bodega', 
     'Meta Aire Envasado', 'Meta Aire L2', 'Meta Aire L3', 'Meta Aire L4', 
     'Meta Aire L5', 'Meta Aire Servicios', 'Hl de Mosto Copia', 
-    'Agua Paste L3', 'Agua Lavadora L3', 'Agua Cond Evaporativos', 
-    'Agua Calderas', 'Agua Efluentes', 'Agua CO2', 'Vapor_L5 (KG)', 
+    'Vapor_L5 (KG)', 
     'Tot Vap Paste L3 / Hora', 'Tot Vap Lav L3 / Hora', 'Medicion Gas Planta (M3)', 
     'Tot A40/240/50/60/Centec/Filtro', 'Tot  A130/330/430'
 ]
+
