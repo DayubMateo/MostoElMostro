@@ -263,22 +263,33 @@ def aplicar_lags(df: pd.DataFrame, columnas: list, n_lags: int = 1):
 
     return df_out
 
-
-import re
-import pandas as pd
-
-def agregar_ratio_producido_meta(df):
+def agregar_moviles_promedio(df, columnas, n_proms=3):
     """
-    Crea columnas ratio entre producido y meta SOLO si la columna producida
+    Agrega columnas de promedio móvil para cada columna dada.
+    - df: DataFrame
+    - columnas: lista de nombres de columnas numéricas
+    - n: tamaño de ventana del promedio móvil
+    """
+    for col in columnas:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            nombre_nueva = f"{col}_movavg_{n_proms}"
+            df[nombre_nueva] = df[col].rolling(window=n_proms, min_periods=1).mean()
+
+    return df
+
+
+def agregar_diferencia_producido_meta(df):
+    """
+    Crea columnas diferencia entre producido y meta SOLO si la columna producida
     contiene '/ Hl' en su nombre (evita totalizadores).
 
     - Detecta columnas que comienzan con 'Meta'.
     - Extrae la variable base (quitando unidades).
     - Busca una columna producida que contenga la base y además '/ Hl'.
-    - Si cumple, crea ratio = producido/meta.
+    - Si cumple, crea diferencia = producido/meta.
 
     Retorna:
-        df modificado con nuevas columnas de ratio.
+        df modificado con nuevas columnas de diferencia.
     """
 
     columnas = df.columns.tolist()
@@ -313,23 +324,43 @@ def agregar_ratio_producido_meta(df):
 
             col_prod = posibles[0]
 
-            # Crear nombre ratio
-            nombre_ratio = f"ratio_{col_prod}"
+            # Crear nombre diferencia
+            nombre_diferencia = f"diferencia_{col_prod}"
 
             # Evitar división por cero
-            df[nombre_ratio] = df[col_prod] / df[col_meta].replace({0: pd.NA})
+            df[nombre_diferencia] = df[col_prod] - df[col_meta]
 
-            print(f"✅ Ratio generado: {nombre_ratio} = {col_prod} / {col_meta}")
+            print(f"✅ Diferencia generada: {nombre_diferencia} = {col_prod} - {col_meta}")
 
     return df
 
 
+def forzar_minimos_cero(df):
+    """
+    Reemplaza valores negativos por 0 en todas las columnas numéricas
+    cuyo nombre NO contenga la palabra 'diferencia'.
+    """
+    cols_no_diferencia = [
+        c for c in df.columns
+        if "diferencia" not in c.lower()
+    ]
+
+    for c in cols_no_diferencia:
+        if pd.api.types.is_numeric_dtype(df[c]):
+            df[c] = df[c].clip(lower=0)
+
+    return df
 
 
 def agregar_target(df):
     df["Frio (Kw) tomorrow"] = df["Frio (Kw)"].shift(-1)
     return df.iloc[:-1]
 
+def eliminar_filas_iniciales(df, n_del):
+    """
+    Elimina las primeras n filas después de aplicar lags o rolling windows.
+    """
+    return df.iloc[n_del:].reset_index(drop=True)
 
 # ================================================================
 # 🔧 FUNCIÓN GENERAL DE PREPROCESSING
@@ -341,10 +372,13 @@ def preprocess_general(df):
     df = agregar_temperatura(df)
     df = agregar_tarifa(df)
     df = agregar_estacion(df)
-    df = agregar_ratio_producido_meta(df)
+    df = agregar_diferencia_producido_meta(df)
     columnas_lag = [col for col in df.columns if col.strip().lower().endswith("(kw)".lower())] #todas las que terminan en kw
-    df = aplicar_lags(df, columnas_lag, n_lags=3)
-    # promedio temporal
+    n = 3
+    df = aplicar_lags(df, columnas_lag, n_lags=n)
+    df = agregar_moviles_promedio(df, columnas_lag, n_proms=n)
+    df = eliminar_filas_iniciales(df, n_del=n)
+    df = forzar_minimos_cero(df)
     df = agregar_target(df)
     return df
 

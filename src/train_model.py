@@ -91,6 +91,60 @@ def get_git_commit_hash():
         return "NO_GIT_REPO"
 
 
+def normalize_params(params):
+    """
+    Normaliza un diccionario de hiperparámetros para que:
+    - El orden no afecte
+    - Los tipos numpy se conviertan a tipos nativos
+    """
+    normalized = {}
+
+    for k, v in params.items():
+        # Convertir tipos numpy a python nativo
+        if hasattr(v, "item"):
+            v = v.item()
+
+        # Convertir listas numpy a listas normales
+        if isinstance(v, (list, tuple)):
+            v = [x.item() if hasattr(x, "item") else x for x in v]
+
+        normalized[k] = v
+
+    # devolver versión ordenada
+    return dict(sorted(normalized.items()))
+
+
+def get_next_version(best, registry_path="models/model_registry.json"):
+    if not os.path.exists(registry_path):
+        return "v1.0.0"
+
+    with open(registry_path, "r", encoding="utf-8") as f:
+        registry = json.load(f)
+
+    last = registry[-1]
+    last_version = last["version"]
+    last_model = last["model_name"]
+
+    last_params = normalize_params(last["hyperparameters"])
+    current_params = normalize_params(json.loads(best["hyperparameters"]))
+
+    current_model = best["model_name"]
+
+    major, minor, patch = map(int, last_version.replace("v", "").split("."))
+
+    # Regla 1
+    if current_model != last_model:
+        return f"v{major+1}.0.0"
+
+    # Regla 2
+    if current_params != last_params:
+        return f"v{major}.{minor+1}.0"
+
+    # Regla 3
+    return f"v{major}.{minor}.{patch+1}"
+
+
+
 # ======================================================
 # 5. Entrenar modelo final y guardarlo
 # ======================================================
@@ -131,23 +185,46 @@ def train_final_model():
     print(f"\nEntrenando modelo final '{model_name}' con los mejores hiperparámetros...")
     model.fit(X_full, y_full)
 
-    # --- Versión del modelo ---
-    version = get_next_version()
+    # ================================
+    #  VERSIONAMIENTO SEMÁNTICO NUEVO
+    # ================================
+    # Normalizar los hiperparámetros actuales igual que quedarán en el registro
+    params_normalized = normalize_params(params)
 
+    # También normalizamos los hiperparámetros del mejor modelo del log
+    best["hyperparameters"] = json.dumps(params_normalized)
+    version = get_next_version(best)
+
+    # ================================
+    #  ELIMINAR MODELO ANTERIOR
+    # ================================
+    registry_path = "models/model_registry.json"
+    if os.path.exists(registry_path):
+        with open(registry_path, "r", encoding="utf-8") as f:
+            registry = json.load(f)
+
+        last_entry = registry[-1]
+        old_model_path = last_entry.get("model_path", None)
+
+        if old_model_path and os.path.exists(old_model_path):
+            try:
+                os.remove(old_model_path)
+                print(f"🗑️ Modelo anterior eliminado: {old_model_path}")
+            except Exception as e:
+                print(f"⚠️ No pude eliminar {old_model_path}: {e}")
+
+    # --- Guardar nuevo modelo ---
     os.makedirs("models", exist_ok=True)
     model_path = f"models/modelo_{version}.pkl"
-
     joblib.dump(model, model_path)
     print(f"✅ Modelo guardado en: {model_path}")
 
-    # --- Registrar en model_registry.json ---
-    registry_path = "models/model_registry.json"
-
+    # --- Registrar ---
     registry_entry = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "version": version,
         "model_name": model_name,
-        "hyperparameters": params,
+        "hyperparameters": params_normalized,
         "mae_test": mae_test,
         "model_path": model_path,
         "git_commit": get_git_commit_hash()

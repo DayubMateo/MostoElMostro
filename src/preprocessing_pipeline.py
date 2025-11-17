@@ -248,7 +248,7 @@ class TimeSeriesInterpolatorSafe(BaseEstimator, TransformerMixin):
 
 
 # --- FUNCIÓN DE PIPELINE CORREGIDA ---
-def construir_pipeline(target, X, only_preprocess = False):
+def construir_pipeline(target, X):
     print("DETECTANDO COLUMNAS!!1!")
     
     cyclical_cols = ['DIA_DEL_ANIO']
@@ -272,8 +272,8 @@ def construir_pipeline(target, X, only_preprocess = False):
     numeric_transformer = Pipeline([
         ('outliers', OutlierReplacer(umbral=3.0)),
         ('imputer', TimeSeriesInterpolatorSafe()),
-#       ('ratio', RatioFeatures()),
-#       ('poly', PolynomialTopFeatures(top_n=15, grado=2)),
+        ('ratio', RatioFeatures()),
+        ('poly', PolynomialTopFeatures(top_n=20, grado=2)),
         ('const_drop', ConstantFeatureRemover()), 
         ('power', power_inst),                    
         ('scaler', scaler_inst)                   
@@ -295,16 +295,10 @@ def construir_pipeline(target, X, only_preprocess = False):
     
     preprocessor.set_output(transform="pandas")
     
-    if only_preprocess:
-        full_pipeline = Pipeline([
-            ('preprocessor', preprocessor),
-    #        ('lasso_top40', lasso_selector) 
-        ])
-    else:
-        full_pipeline = Pipeline([
-            ('preprocessor', preprocessor),
-            ('lasso_top40', lasso_selector) 
-        ])
+    full_pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('lasso_top40', lasso_selector) 
+    ])
     
     return full_pipeline
 

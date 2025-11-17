@@ -117,5 +117,39 @@
         "mae_test": 2745.3884188243087,
         "model_path": "models/modelo_v1.0.6.pkl",
         "git_commit": "7351f6d5ff1d8516118669813ee2af0f53f434a5"
+    },
+    {
+        "timestamp": "2025-11-16 23:33:52",
+        "version": "v1.0.7",
+        "model_name": "RandomForest",
+        "hyperparameters": {
+            "max_depth": 39,
+            "max_features": 0.7682538772226404,
+            "min_samples_leaf": 4,
+            "min_samples_split": 19,
+            "n_estimators": 750,
+            "n_jobs": -1,
+            "random_state": 42
+        },
+        "mae_test": 2745.3884188243087,
+        "model_path": "models/modelo_v1.0.7.pkl",
+        "git_commit": "d6c59b7a6884cba25ccbb6c2655fa8839d2656b1"
+    },
+    {
+        "timestamp": "2025-11-16 23:34:11",
+        "version": "v1.0.8",
+        "model_name": "RandomForest",
+        "hyperparameters": {
+            "max_depth": 39,
+            "max_features": 0.7682538772226404,
+            "min_samples_leaf": 4,
+            "min_samples_split": 19,
+            "n_estimators": 750,
+            "n_jobs": -1,
+            "random_state": 42
+        },
+        "mae_test": 2745.3884188243087,
+        "model_path": "models/modelo_v1.0.8.pkl",
+        "git_commit": "d6c59b7a6884cba25ccbb6c2655fa8839d2656b1"
     }
 ]

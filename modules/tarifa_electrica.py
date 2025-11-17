@@ -165,7 +165,7 @@ cargos_por_anio = {
 # --- 4. Función general actualizada ---
 def calcular_tarifa_electrica_general(df, periodos, cargos_por_anio):
     # Obtenemos las columnas de consumo en KW
-    columnas_consumo = [col for col in df.columns if ("KW" in col.upper() and "FRIO" not in col.upper())]
+    columnas_consumo = [col for col in df.columns if ("KW" in col.upper() and "TOMORROW" not in col.upper())]
     print(columnas_consumo)   
     """
     Calcula la tarifa eléctrica diaria con cargos variables por mes y año.
