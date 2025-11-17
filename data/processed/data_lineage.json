@@ -1,0 +1,76 @@
+{
+    "input_file": "data/processed\\dataset_final.csv",
+    "output_files": {
+        "X_train": "data/processed\\X_train_preproc.csv",
+        "X_test": "data/processed\\X_test_preproc.csv",
+        "y_train": "data/processed\\y_train.csv",
+        "y_test": "data/processed\\y_test.csv",
+        "pipeline": "models\\pipeline_entrenado.joblib"
+    },
+    "script_used": "preprocessing_pipeline.py",
+    "execution_timestamp": "2025-11-17T00:54:45.321732",
+    "final_data_shape": {
+        "X_train": {
+            "rows": 826,
+            "columns": 40
+        },
+        "X_test": {
+            "rows": 355,
+            "columns": 40
+        },
+        "y_train": {
+            "rows": 826
+        },
+        "y_test": {
+            "rows": 355
+        }
+    },
+    "pipeline_summary": "Full preprocessing and feature selection pipeline.",
+    "pipeline_steps": [
+        "preprocessor",
+        "lasso_top40"
+    ],
+    "final_features": [
+        "num__EE Sala Maq / Hl",
+        "num__Frio (Kw) Agua Planta (Hl)",
+        "num__Frio (Kw)_movavg_3",
+        "num__Frio (Kw) Sala Maq (Kw)_lag2",
+        "num__Servicios (Kw)",
+        "num__ET Bodega/Hl KW Trafo 11",
+        "num__Servicios (Kw) KW Trafo 11",
+        "num__ratio_Cocina_SalaMaq",
+        "num__Servicios (Kw)^2",
+        "num__Frio (Kw)_movavg_3^2",
+        "num__Frio (Kw)^2",
+        "num__ratio_SalaMaq_Planta",
+        "num__Meta ET Linea 2",
+        "num__KW Trafo 11",
+        "num__EE Servicios / Hl",
+        "num__Elaboracion (Kw)_movavg_3",
+        "num__diferencia_EE Servicios / Hl",
+        "num__Pta Agua / Eflu (Kw)",
+        "num__KW Trafo 11 ET Servicios / Hl",
+        "num__Sala Maq (Kw)_lag1 ET Servicios / Hl",
+        "num__Pta Agua / Eflu (Kw)_movavg_3",
+        "num__KW Trafo 11^2",
+        "num__VAPOR DE CALDERA 4 KG",
+        "num__Sala Maq (Kw)_movavg_3 KW Trafo 11",
+        "num__Servicios (Kw) Frio (Kw)_lag3",
+        "num__Efluentes (Kw)_movavg_3",
+        "num__Frio (Kw)",
+        "num__Sala Maq (Kw)^2",
+        "num__Frio (Kw) Frio (Kw)_lag3",
+        "num__Frio (Kw) KW Trafo 11",
+        "num__ratio_Cocina_Produccion",
+        "num__Linea 2 (Kw)_movavg_3",
+        "num__Frio (Kw)_lag3 Agua Planta (Hl)",
+        "num__Planta (Kw)_lag3",
+        "num__Frio (Kw)_movavg_3 KW Trafo 11",
+        "num__Sala Maq (Kw)_lag1^2",
+        "num__Cocina (Kw)_movavg_3",
+        "num__Frio (Kw) Sala Maq (Kw)_lag1",
+        "num__Frio (Kw)_movavg_3 KW Gral Planta",
+        "num__ET Bodega/Hl^2"
+    ],
+    "description": "Dataset procesado con OutlierReplacer, TimeSeriesInterpolatorSafe, ConstantFeatureRemover, PowerTransformer, StandardScaler, CyclicalEncoder, y TopNLasso(n=40)."
+}
