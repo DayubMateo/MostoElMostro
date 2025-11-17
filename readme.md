@@ -99,16 +99,3 @@ Problema: No se encuentra el kernel en notebooks
 Solución: Seleccionar manualmente el kernel de Python del entorno virtual (.venv)
 
 ¿Necesitas ayuda? Revisa los notebooks para ejemplos detallados de uso.
-
-1. Dentro de la carpeta en la que se desea almacenar el proyecto, ejecutar el siguiente comando:"git clone https://github.com/DayubMateo/MostoElMostro.git"
-2. Abrir la terminal con Ctrl + Ñ
-3. Crear el entorno virtual con "uv venv"
-4. Activar el entorno virtual copiando la ruta de '.venv/Scripts/activate', pegándola en la terminal y presionar Enter
-5. Instalar dependencias con "uv pip install -r requirements.txt"	
-6. Ejecutar el pipeline de preprocesamiento para los 3 archivos iniciales mediante 'python src/preprocessing_pipeline.py' (tarda aproximadamente unos 4 minutos)
-7. (Opcional) Ejecutar los notebooks (terminados en .ipynb)
-7.1 Puede surgir una notificación hablando sobre el kernel, seleccionar el kernel de Python con el nombre del entorno virtual
-7.2 Puede surgir una notificación solicitando
-8. Guardar el mejor modelo con "python src/train_model.py"
-9. Ponerlo a prueba mediante 'python src/predict.py "<ruta_del_excel>"'
-10. Los resultados serán almacenados en "results/predicciones.csv"
